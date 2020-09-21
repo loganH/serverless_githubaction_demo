@@ -1,6 +1,6 @@
 {
   "name": "serverless-githhubaction-boilerplate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Boilerplate for lamnbda and CICD using  github actions",
   "repository": "https://github.com/loganH/serverless_githubaction.git",
   "author": "loganH",
