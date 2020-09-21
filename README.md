@@ -40,7 +40,7 @@ and generate ACCESS_KEY_ID and SECRET_ACCESS_KEY to use with github actions.
 
 Add the secret variables into github repository > `settings` > `Secrets` to use with workflow files.
 
-![alt text](https://github.com/loganH/serverless_githubaction/blob/master/docs/secrets.png?raw=true)
+![alt text](https://github.com/turnercode/fp-serverless-githhubaction-boilerplate/blob/master/docs/secrets.png?raw=true)
 
 ### Workflow files
 
