@@ -41,7 +41,7 @@ You may need to set up an AWS user with IAM permission to run the build( like cr
 
 Add the secret variables into GitHub repository > `settings` > `Secrets` to use with workflow files.
 
-![alt text](https://github.com/loganH/serverless_githubaction/blob/master/docs/secrets.png?raw=true)
+![alt text](https://github.com/loganH/serverless_githubaction_demo/blob/master/docs/secrets.png?raw=true)
 
 ### Workflow files
 
