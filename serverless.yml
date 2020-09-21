@@ -1,0 +1,41 @@
+name: serverless-githubaction-boilerplate
+
+service: serverless-githubaction-boilerplate
+
+frameworkVersion: '>=1.57.0 <2.0.0'
+
+custom:
+  serverless-offline:
+    port: '6060'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, env:AWS_STAGE, 'dev'}
+  region: ${opt:region, env:AWS_REGION, 'us-east-1'}
+  environment:
+    NODE_ENV: ${opt:stage, env:AWS_STAGE, 'dev'}
+  logs:
+    restApi: true
+  timeout: 20
+  tracing:
+    lambda: true
+  versionFunctions: false
+
+functions:
+  demo:
+    handler: src/handler/demo.handler
+    events:
+      - http:
+          path: demo
+          method: get
+
+  healthcheck:
+    handler: src/handler/healthcheck.handler
+    events:
+      - http:
+          path: healthcheck
+          method: get
+
+plugins:
+  - serverless-offline

@@ -1,0 +1,36 @@
+name: Continuous Delivery DEV
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        run: |
+          yarn --frozen-lockfile
+      - name: Run tests
+        run: |
+          yarn test
+      - name: Deploy lambda to  us-east-1
+        run: |
+          yarn sls:deploy
+        env:
+          SLS_DEBUG: 'true'
+          AWS_STAGE: 'dev'
+          AWS_REGION: 'us-east-1'
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}

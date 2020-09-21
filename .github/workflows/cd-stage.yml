@@ -1,0 +1,71 @@
+name: Continuous Delivery Stage
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        run: |
+          yarn --frozen-lockfile
+      - name: Run tests
+        run: |
+          yarn test
+      - name: Generate Changelog using --dry-run to use with SNS post
+        run: |
+          npm run release -- --dry-run > releaseNotes.txt
+          cat ./releaseNotes.txt
+          chmod +x ./changelog.sh
+      - name: Format release notes
+        run: |
+          bash ./changelog.sh releaseNotes.txt > releaseNotesFormated.txt
+          rm releaseNotes.txt
+      - name: Update Changelog,package.json and create tag using standard-version
+        run: |
+          git config --local user.email "github-action@users.noreply.github.com"
+          git config --local user.name "GitHub Action"
+          npm run release
+      - name: Commit and push changelog and package.json update
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy lambda to us-east-1
+        run: |
+          yarn sls:deploy
+        env:
+          SLS_DEBUG: 'true'
+          AWS_STAGE: 'stage'
+          AWS_REGION: 'us-east-1'
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+
+      - name: Install AWS cli and send release notes to SNS topic
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
+          aws sns publish  --topic-arn "${{ env.AWS_SNS }}"  --message file://releaseNotesFormated.txt
+        env:
+          AWS_DEFAULT_REGION: 'us-east-1'
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_SNS: ${{secrets.AWS_SNS}}

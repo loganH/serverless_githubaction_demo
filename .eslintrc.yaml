@@ -1,0 +1,15 @@
+extends:
+  - prettier
+  - eslint:recommended
+plugins:
+  - prettier
+env:
+  node: true
+  es6: true
+parserOptions:
+  sourceType: 'script'
+  ecmaVersion: 2018
+rules:
+  prettier/prettier: error
+  prefer-const: error
+  no-unused-vars: 0

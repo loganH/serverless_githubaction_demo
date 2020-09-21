@@ -1,0 +1,81 @@
+name: Continuous Delivery Prod Deploy
+
+on:
+  push:
+    branches:
+      - prod-deploy
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: jitterbit/get-changed-files@v1
+        id: stepmodifiled
+        with:
+          format: space-delimited
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Printing Modified files
+        run: |
+          echo "All:"
+          echo "${{ steps.stepmodifiled.outputs.all }}"
+          echo "Added:"
+          echo "${{ steps.stepmodifiled.outputs.added }}"
+          echo "Removed:"
+          echo "${{ steps.stepmodifiled.outputs.removed }}"
+          echo "Renamed:"
+          echo "${{ steps.stepmodifiled.outputs.renamed }}"
+          echo "Modified:"
+          echo "${{ steps.stepmodifiled.outputs.modified }}"
+          echo "Added+Modified:"
+          echo "${{ steps.abc.outputs.added_modified }}"
+      - name: Check version updated on metadata.json
+        if: contains(steps.stepmodifiled.outputs.modified, 'metadata.json')
+        run: echo "metadata changed = true"
+
+      - name: Extract data from metadata.json
+        id: metadata_vars
+        run: |
+          content=`cat ./metadata.json`
+          # the following lines are only required for multi line json
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "::set-output name=packageJson::$content"
+      - id: release_vars
+        run: echo "::set-output name=releaseTag::v${{fromJson(steps.metadata_vars.outputs.packageJson).version}}"
+
+      - run: echo "Release Tag = ${{steps.release_vars.outputs.releaseTag}}"
+
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{steps.release_vars.outputs.releaseTag}}
+      - name: Use Node.js ${{ matrix.node-version }}
+        if: contains(steps.stepmodifiled.outputs.modified, 'metadata.json')
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install packages
+        if: contains(steps.stepmodifiled.outputs.modified, 'metadata.json')
+        run: |
+          yarn --frozen-lockfile
+      - name: Run tests
+        if: contains(steps.stepmodifiled.outputs.modified, 'metadata.json')
+        run: |
+          yarn test
+      - name: Deploy lambda to us-east-1
+        if: contains(steps.stepmodifiled.outputs.modified, 'metadata.json')
+        run: |
+          yarn sls:deploy
+        env:
+          SLS_DEBUG: 'true'
+          AWS_STAGE: 'prod'
+          AWS_REGION: 'us-east-1'
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}

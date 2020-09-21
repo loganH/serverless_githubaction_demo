@@ -1,0 +1,5 @@
+/bin
+/public
+/build
+/coverage
+node_modules
