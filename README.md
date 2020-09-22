@@ -1,4 +1,4 @@
-# Boilerplate - Serverless and CICD using GitHub Actions
+# Simplify your CI/CD workflow for lambda using GitHub Actions and Serverless framework
 
 ## What are we going to accomplish?
 
